@@ -1,20 +1,45 @@
 ---
 description: Deploy latest code to NAS OpenAlgo container
 ---
-Run the NAS deployment update script via SSH:
+
+## Quick deploy (develop branch → NAS)
 
 ```bash
 ssh admin@192.168.1.72 '/volume1/docker/openalgo/repo/deploy/update.sh'
 ```
 
-If SSH key auth isn't set up yet, run this from WSL first:
+## Deploy a specific release tag
+
+```bash
+./deploy/deploy-tag.sh nas/v0.1
+```
+
+## Cut a new release tag (from develop, after smoke tests pass)
+
+```bash
+./deploy/smoke-test.sh abce          # pre-flight checks
+./deploy/release.sh 0.2              # creates and pushes nas/v0.2
+./deploy/deploy-tag.sh nas/v0.2      # deploys to NAS
+```
+
+## List available release tags
+
+```bash
+git tag -l 'nas/*' | sort -V
+```
+
+## Check what the NAS is currently running
+
+```bash
+ssh admin@192.168.1.72 'cd /volume1/docker/openalgo/repo && git describe --tags'
+```
+
+---
+
+If SSH key auth isn't set up yet, run from WSL first:
 
 ```bash
 ssh-copy-id admin@192.168.1.72
 ```
 
-The update script will:
-1. Pull the latest code from GitHub (main branch)
-2. Rebuild the Docker image
-3. Restart the container
-4. Tail logs so you can confirm a healthy startup
+See `deploy/RELEASE.md` for the full branch and release strategy.
