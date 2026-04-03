@@ -22,7 +22,7 @@ set -e
 
 NAS_ROOT="/volume1/docker/openalgo"
 REPO_DIR="$NAS_ROOT/repo"
-REPO_URL="${REPO_URL:-https://github.com/YOUR_GITHUB_USER/openalgo.git}"
+REPO_URL="${REPO_URL:-https://github.com/UltraGit/openalgo.git}"
 
 echo "=== OpenAlgo NAS — One-Time Setup ==="
 echo "NAS root: $NAS_ROOT"
@@ -54,16 +54,42 @@ echo "      $NAS_ROOT/tmp"
 echo "      $NAS_ROOT/env  (secrets go here)"
 
 # ----------------------------------------------------------------------------
-# 2. Clone repository
+# 2. Clone repository and checkout deploy branch
 # ----------------------------------------------------------------------------
 echo ""
 echo "[2/4] Cloning repository to $REPO_DIR..."
 
+DEPLOY_BRANCH="${DEPLOY_BRANCH:-develop}"
+
 if [ -d "$REPO_DIR/.git" ]; then
-    echo "    Repo already exists — skipping clone. Run 'git pull' to update."
+    echo "    Repo already exists — pulling latest and switching to $DEPLOY_BRANCH..."
+    cd "$REPO_DIR"
+    git fetch --tags origin
+    git checkout "$DEPLOY_BRANCH" 2>/dev/null || \
+        git checkout -b "$DEPLOY_BRANCH" --track "origin/$DEPLOY_BRANCH"
+    git pull origin "$DEPLOY_BRANCH"
 else
     git clone "$REPO_URL" "$REPO_DIR"
-    echo "    Cloned successfully."
+    cd "$REPO_DIR"
+    # Checkout the deploy branch so env.nas.sample and all NAS files are present.
+    # main tracks upstream OpenAlgo only — our deploy layer lives on develop.
+    echo "    Checking out branch: $DEPLOY_BRANCH"
+    git checkout "$DEPLOY_BRANCH" 2>/dev/null || \
+        git checkout -b "$DEPLOY_BRANCH" --track "origin/$DEPLOY_BRANCH"
+    git fetch --tags origin
+fi
+
+# Show repo state and available release tags
+CURRENT=$(git rev-parse --abbrev-ref HEAD)
+SHORT=$(git rev-parse --short HEAD)
+echo "    Repo ready: branch '$CURRENT' @ $SHORT"
+
+TAGS=$(git tag -l 'nas/*' | sort -V)
+if [ -n "$TAGS" ]; then
+    echo "    Available release tags:"
+    echo "$TAGS" | sed 's/^/      /'
+else
+    echo "    No release tags yet — cut one from WSL with: ./deploy/release.sh 0.1"
 fi
 
 # ----------------------------------------------------------------------------
@@ -71,29 +97,42 @@ fi
 # ----------------------------------------------------------------------------
 echo ""
 echo "[3/4] Configure your environment file..."
-echo ""
-echo "  ┌─────────────────────────────────────────────────────────────────┐"
-echo "  │  ACTION REQUIRED: Create and populate your .env file            │"
-echo "  │                                                                 │"
-echo "  │  cp $REPO_DIR/env.nas.sample $NAS_ROOT/env/.env                │"
-echo "  │  nano $NAS_ROOT/env/.env                                        │"
-echo "  │                                                                 │"
-echo "  │  Mandatory values to set:                                       │"
-echo "  │    APP_KEY          (run: python3 -c \"import secrets;           │"
-echo "  │                      print(secrets.token_hex(32))\")             │"
-echo "  │    API_KEY_PEPPER   (generate a second key the same way)        │"
-echo "  │    HOST_SERVER      http://192.168.1.72:8080                    │"
-echo "  │    WEBSOCKET_URL    ws://192.168.1.72:8765                      │"
-echo "  └─────────────────────────────────────────────────────────────────┘"
+
+# env.nas.sample is only present on develop (not main) — confirm it's there
+if [ -f "$REPO_DIR/env.nas.sample" ]; then
+    echo ""
+    echo "  ┌─────────────────────────────────────────────────────────────────┐"
+    echo "  │  ACTION REQUIRED: Create and populate your .env file            │"
+    echo "  │                                                                 │"
+    echo "  │  cp $REPO_DIR/env.nas.sample $NAS_ROOT/env/.env                │"
+    echo "  │  nano $NAS_ROOT/env/.env                                        │"
+    echo "  │                                                                 │"
+    echo "  │  Mandatory values to set:                                       │"
+    echo "  │    APP_KEY          (run: python3 -c \"import secrets;           │"
+    echo "  │                      print(secrets.token_hex(32))\")             │"
+    echo "  │    API_KEY_PEPPER   (generate a second key the same way)        │"
+    echo "  │    HOST_SERVER      http://192.168.1.72:8080                    │"
+    echo "  │    WEBSOCKET_URL    ws://192.168.1.72:8765                      │"
+    echo "  └─────────────────────────────────────────────────────────────────┘"
+else
+    echo ""
+    echo "  WARNING: env.nas.sample not found — repo may be on the wrong branch."
+    echo "  Expected branch: $DEPLOY_BRANCH"
+    echo "  Current branch:  $(git rev-parse --abbrev-ref HEAD)"
+    echo "  Manually create $NAS_ROOT/env/.env from the template in the repo."
+fi
 
 # ----------------------------------------------------------------------------
 # 4. Print start command
 # ----------------------------------------------------------------------------
 echo ""
-echo "[4/4] When your .env is ready, start OpenAlgo with:"
+echo "[4/4] When your .env is ready, deploy from WSL with:"
 echo ""
-echo "  cd $REPO_DIR"
-echo "  docker compose -f docker-compose.nas.yml up -d --build"
+echo "  # Deploy latest develop branch:"
+echo "  ssh nas '$REPO_DIR/deploy/update.sh'"
+echo ""
+echo "  # Or deploy a specific release tag:"
+echo "  ./deploy/deploy-tag.sh nas/v0.1"
 echo ""
 echo "  Then open: http://192.168.1.72:8080"
 echo ""
