@@ -6,11 +6,11 @@
 # clone the repository.
 #
 # Usage:
-#   ssh admin@192.168.1.72
+#   ssh nas
 #   bash <(curl -fsSL https://raw.githubusercontent.com/YOUR_FORK/openalgo/main/deploy/nas-setup.sh)
 #
 # Or copy the script to the NAS first, then:
-#   ssh admin@192.168.1.72 'bash /tmp/nas-setup.sh'
+#   ssh nas 'bash /tmp/nas-setup.sh'
 #
 # Prerequisites:
 #   - Docker and Git installed on the NAS (via Synology Package Center)

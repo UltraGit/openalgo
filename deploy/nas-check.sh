@@ -9,8 +9,9 @@
 #   ./deploy/nas-check.sh
 #
 # Checks performed:
+#   LOCAL  0  ~/.ssh/config has 'nas' alias
 #   LOCAL  1  NAS reachable (ping)
-#   LOCAL  2  SSH connection as thorn
+#   LOCAL  2  SSH connection via 'nas' alias (BatchMode — no prompts)
 #   NAS    3  Docker daemon running
 #   NAS    4  Docker Compose available
 #   NAS    5  Git installed
@@ -29,8 +30,8 @@
 
 set -uo pipefail
 
-NAS_HOST="thorn@192.168.1.72"
-NAS_IP="192.168.1.72"
+NAS_HOST="nas"
+NAS_IP="192.168.1.72"   # explicit IP for ping (SSH alias not usable here)
 NAS_ROOT="/volume1/docker/openalgo"
 REPO_DIR="${NAS_ROOT}/repo"
 ENV_FILE="${NAS_ROOT}/env/.env"
@@ -67,6 +68,16 @@ check() {
 
 section "Local checks"
 
+# 0. SSH config alias
+if ssh -G nas 2>/dev/null | grep -qi "hostname 192.168.1.72"; then
+    pass "SSH config: 'nas' alias → 192.168.1.72 (IdentityFile: $(ssh -G nas 2>/dev/null | awk '/^identityfile/{print $2; exit}'))"
+else
+    fail "SSH config: 'nas' alias not found in ~/.ssh/config"
+    echo "  Add it with:"
+    echo "    echo -e '\\nHost nas\\n  HostName 192.168.1.72\\n  User thorn\\n  IdentityFile ~/.ssh/nas_key\\n  IdentitiesOnly yes' >> ~/.ssh/config"
+    echo "    chmod 600 ~/.ssh/config"
+fi
+
 # 1. Ping
 if ping -c1 -W2 "$NAS_IP" &>/dev/null; then
     pass "NAS reachable at $NAS_IP"
@@ -77,13 +88,17 @@ else
     exit 1
 fi
 
-# 2. SSH
+# 2. SSH (BatchMode — will not prompt for passphrase or password)
 if ssh -o ConnectTimeout=5 -o BatchMode=yes "$NAS_HOST" true 2>/dev/null; then
-    pass "SSH connection as $NAS_HOST (key auth working)"
+    pass "SSH connection via 'nas' alias (key auth, no password prompt)"
 else
-    fail "SSH connection failed — run: ssh-copy-id $NAS_HOST"
+    fail "SSH BatchMode failed — key not accepted by NAS"
+    echo "  Fix: push your public key to the NAS (password prompt — last time):"
+    echo "    cat ~/.ssh/nas_key.pub | ssh thorn@192.168.1.72 \\"
+    echo "      'mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys'"
+    echo "  Then retry: ssh -o BatchMode=yes nas true"
     echo ""
-    echo "Cannot continue — SSH access required for NAS checks."
+    echo "Cannot continue — SSH key auth required for NAS checks."
     exit 1
 fi
 
