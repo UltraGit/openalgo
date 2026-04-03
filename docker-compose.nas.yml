@@ -1,0 +1,66 @@
+# ============================================================================
+# OpenAlgo — Synology NAS Production Compose
+# ============================================================================
+# Usage (on the NAS via SSH):
+#   cd /volume1/docker/openalgo/repo
+#   docker compose -f docker-compose.nas.yml up -d --build
+#
+# Prerequisites on NAS:
+#   - /volume1/docker/openalgo/env/.env   (copied from env.nas.sample, filled in)
+#   - /volume1/docker/openalgo/db/        (auto-created by nas-setup.sh)
+#   - /volume1/docker/openalgo/log/       (auto-created by nas-setup.sh)
+#   - /volume1/docker/openalgo/strategies/ (auto-created by nas-setup.sh)
+#   - /volume1/docker/openalgo/keys/      (auto-created by nas-setup.sh)
+# ============================================================================
+
+services:
+  openalgo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: openalgo
+    image: openalgo:nas
+
+    ports:
+      - "8080:8080"    # Web UI  (Synology DSM occupies 5000)
+      - "8765:8765"    # WebSocket proxy
+      - "5555:5555"    # ZeroMQ message bus
+
+    # Bind-mount NAS volumes so data persists across rebuilds
+    volumes:
+      - /volume1/docker/openalgo/db:/app/db
+      - /volume1/docker/openalgo/log:/app/log
+      - /volume1/docker/openalgo/strategies:/app/strategies
+      - /volume1/docker/openalgo/keys:/app/keys
+      - /volume1/docker/openalgo/tmp:/app/tmp
+      # Mount .env read-only (start.sh reads it on startup)
+      - /volume1/docker/openalgo/env/.env:/app/.env:ro
+
+    environment:
+      # Override port — start.sh uses PORT to bind gunicorn
+      - PORT=8080
+      - FLASK_HOST_IP=0.0.0.0
+      - FLASK_PORT=8080
+      - WEBSOCKET_HOST=0.0.0.0
+      - ZMQ_HOST=0.0.0.0
+      - FLASK_DEBUG=False
+      - FLASK_ENV=production
+      # Thread limits (safe for NAS hardware)
+      - OPENBLAS_NUM_THREADS=2
+      - OMP_NUM_THREADS=2
+      - MKL_NUM_THREADS=2
+      - NUMEXPR_NUM_THREADS=2
+      - NUMBA_NUM_THREADS=2
+      - STRATEGY_MEMORY_LIMIT_MB=512
+
+    shm_size: 256m
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/auth/check-setup"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    restart: unless-stopped
