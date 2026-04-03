@@ -9,7 +9,7 @@ import os
 import sys
 import datetime
 
-ENV_FILE = os.environ.get("ENV_FILE", "/app/env_host/.env")
+ENV_FILE = os.environ.get("ENV_FILE", "/tmp/env_host/.env")
 
 # Keys safe to print (no credentials or secrets)
 SAFE_KEYS = [
