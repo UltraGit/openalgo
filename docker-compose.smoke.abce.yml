@@ -1,0 +1,101 @@
+# ============================================================================
+# OpenAlgo Smoke Test — ABCE
+# ============================================================================
+# Variant: abce
+# Tests:   HELLO + A (vol) + B (port) + C (env) + E (ws)
+#   HELLO  — container starts, stdout logging works
+#   A/vol  — NAS bind mount at /app/db is readable and writable
+#   B/port — port 8080 is reachable from WSL (HTTP server probe)
+#   C/env  — /volume1/docker/openalgo/env/.env is mounted and parseable
+#   E/ws   — WebSocket server on 8765 accepts connections and echoes messages
+#             (smoke-ws-client runs an automated probe; port also open from WSL)
+#
+# Usage (via deploy/smoke-test.sh abce, or manually):
+#   cd /volume1/docker/openalgo/repo
+#   docker compose -f docker-compose.smoke.abce.yml up -d
+#   docker compose -f docker-compose.smoke.abce.yml logs -f
+#   # From WSL: curl http://192.168.1.72:8080/        (B/port)
+#   # From WSL: wscat -c ws://192.168.1.72:8765       (E/ws manual probe)
+#   docker compose -f docker-compose.smoke.abce.yml down
+#
+# WARNING: smoke-port binds host port 8080, smoke-ws-server binds 8765.
+#   Do NOT run this while the main openalgo container is up.
+#
+# Prerequisites on NAS:
+#   /volume1/docker/openalgo/db/       (created by nas-setup.sh)
+#   /volume1/docker/openalgo/env/.env  (copied from env.nas.sample, filled in)
+#
+# Note: smoke-ws-server and smoke-ws-client pip-install 'websockets' on startup.
+#   First run will be slower (~10s) while the package downloads.
+# ============================================================================
+
+services:
+
+  smoke-hello:                          # HELLO: heartbeat logger
+    image: python:3.12-slim
+    container_name: openalgo-smoke-hello
+    volumes:
+      - /volume1/docker/openalgo/repo/test/smoke:/app:ro
+    working_dir: /app
+    command: python hello_smoke.py
+    restart: "no"
+
+  smoke-vol:                            # A (vol): volume mount read/write
+    image: python:3.12-slim
+    container_name: openalgo-smoke-vol
+    volumes:
+      - /volume1/docker/openalgo/repo/test/smoke:/app:ro
+      - /volume1/docker/openalgo/db:/app/db
+    working_dir: /app
+    command: python vol_smoke.py
+    restart: "no"
+
+  smoke-port:                           # B (port): HTTP server on 8080
+    image: python:3.12-slim
+    container_name: openalgo-smoke-port
+    volumes:
+      - /volume1/docker/openalgo/repo/test/smoke:/app:ro
+    working_dir: /app
+    ports:
+      - "8080:8080"
+    command: python port_smoke.py
+    restart: "no"
+
+  smoke-env:                            # C (env): .env file parse verification
+    image: python:3.12-slim
+    container_name: openalgo-smoke-env
+    volumes:
+      - /volume1/docker/openalgo/repo/test/smoke:/app:ro
+      - /volume1/docker/openalgo/env/.env:/app/.env:ro
+    working_dir: /app
+    command: python env_smoke.py
+    restart: "no"
+
+  smoke-ws-server:                      # E (ws): WebSocket echo server on 8765
+    image: python:3.12-slim
+    container_name: openalgo-smoke-ws-server
+    volumes:
+      - /volume1/docker/openalgo/repo/test/smoke:/app:ro
+    working_dir: /app
+    ports:
+      - "8765:8765"
+    # pip install inline — no custom image needed
+    command: >
+      sh -c "pip install --quiet --no-cache-dir websockets
+             && python ws_server_smoke.py"
+    restart: "no"
+
+  smoke-ws-client:                      # E (ws): automated WebSocket probe
+    image: python:3.12-slim
+    container_name: openalgo-smoke-ws-client
+    volumes:
+      - /volume1/docker/openalgo/repo/test/smoke:/app:ro
+    working_dir: /app
+    # sleep 8 gives the server time to finish pip install and start listening
+    command: >
+      sh -c "pip install --quiet --no-cache-dir websockets
+             && sleep 8
+             && python ws_client_smoke.py"
+    depends_on:
+      - smoke-ws-server
+    restart: "no"
