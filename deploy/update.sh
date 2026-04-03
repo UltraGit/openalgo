@@ -4,14 +4,14 @@
 # ============================================================================
 # Run this on the NAS directly or via SSH from your dev machine:
 #
-#   ssh admin@192.168.1.72 '/volume1/docker/openalgo/repo/deploy/update.sh'
+#   ssh thorn@192.168.1.72 '/volume1/docker/openalgo/repo/deploy/update.sh'
 #
 # Deploy a specific release tag:
-#   ssh admin@192.168.1.72 \
+#   ssh thorn@192.168.1.72 \
 #     'DEPLOY_TAG=nas/v0.1 /volume1/docker/openalgo/repo/deploy/update.sh'
 #
 # Deploy a specific branch (e.g. during development):
-#   ssh admin@192.168.1.72 \
+#   ssh thorn@192.168.1.72 \
 #     'DEPLOY_BRANCH=develop /volume1/docker/openalgo/repo/deploy/update.sh'
 #
 # Priority: DEPLOY_TAG > DEPLOY_BRANCH > default (develop)
