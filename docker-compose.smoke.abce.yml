@@ -4,7 +4,7 @@
 # Variant: abce
 # Tests:   HELLO + A (vol) + B (port) + C (env) + E (ws)
 #   HELLO  — container starts, stdout logging works
-#   A/vol  — NAS bind mount at /app/db is readable and writable
+#   A/vol  — NAS bind mount is readable and writable
 #   B/port — port 8080 is reachable from WSL (HTTP server probe)
 #   C/env  — /volume1/docker/openalgo/env/.env is mounted and parseable
 #   E/ws   — WebSocket server on 8765 accepts connections and echoes messages
@@ -24,6 +24,10 @@
 # Prerequisites on NAS:
 #   /volume1/docker/openalgo/db/       (created by nas-setup.sh)
 #   /volume1/docker/openalgo/env/.env  (copied from env.nas.sample, filled in)
+#
+# Note on Synology AUFS: bind-mount destinations must already exist inside
+# the image. python:3.12-slim only guarantees /tmp, so all secondary mounts
+# (anything beyond the /app source mount) go under /tmp/.
 #
 # Note: smoke-ws-server and smoke-ws-client pip-install 'websockets' on startup.
 #   First run will be slower (~10s) while the package downloads.
@@ -45,7 +49,9 @@ services:
     container_name: openalgo-smoke-vol
     volumes:
       - /volume1/docker/openalgo/repo/test/smoke:/app:ro
-      - /volume1/docker/openalgo/db:/app/db
+      - /volume1/docker/openalgo/db:/tmp/db    # /tmp always exists in image
+    environment:
+      - DB_PATH=/tmp/db
     working_dir: /app
     command: python vol_smoke.py
     restart: "no"
@@ -66,9 +72,7 @@ services:
     container_name: openalgo-smoke-env
     volumes:
       - /volume1/docker/openalgo/repo/test/smoke:/app:ro
-      # Mount the directory, not the file — Synology AUFS cannot bind-mount a
-      # single file into a path that doesn't already exist in the image.
-      - /volume1/docker/openalgo/env:/tmp/env_host:ro
+      - /volume1/docker/openalgo/env:/tmp/env_host:ro  # /tmp always exists
     environment:
       - ENV_FILE=/tmp/env_host/.env
     working_dir: /app
@@ -83,7 +87,6 @@ services:
     working_dir: /app
     ports:
       - "8765:8765"
-    # pip install inline — no custom image needed
     command: >
       sh -c "pip install --quiet --no-cache-dir websockets
              && python ws_server_smoke.py"
@@ -95,7 +98,6 @@ services:
     volumes:
       - /volume1/docker/openalgo/repo/test/smoke:/app:ro
     working_dir: /app
-    # sleep 8 gives the server time to finish pip install and start listening
     command: >
       sh -c "pip install --quiet --no-cache-dir websockets
              && sleep 8

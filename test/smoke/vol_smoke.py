@@ -8,7 +8,7 @@ import os
 import sys
 import datetime
 
-DB_PATH = "/app/db"
+DB_PATH = os.environ.get("DB_PATH", "/tmp/db")
 TEST_FILE = os.path.join(DB_PATH, "smoke_vol_test.txt")
 TIMESTAMP = datetime.datetime.now().isoformat()
 
