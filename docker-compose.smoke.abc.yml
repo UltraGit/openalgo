@@ -60,7 +60,11 @@ services:
     container_name: openalgo-smoke-env
     volumes:
       - /volume1/docker/openalgo/repo/test/smoke:/app:ro
-      - /volume1/docker/openalgo/env/.env:/app/.env:ro
+      # Mount the directory, not the file — Synology AUFS cannot bind-mount a
+      # single file into a path that doesn't already exist in the image.
+      - /volume1/docker/openalgo/env:/app/env_host:ro
+    environment:
+      - ENV_FILE=/app/env_host/.env
     working_dir: /app
     command: python env_smoke.py
     restart: "no"
