@@ -27,7 +27,7 @@
 
 set -euo pipefail
 
-NAS_HOST="admin@192.168.1.72"
+NAS_HOST="thorn@192.168.1.72"
 REPO_DIR="/volume1/docker/openalgo/repo"
 VARIANT="${1:-hello}"
 LOG_TAIL_SECS="${LOG_TAIL_SECS:-60}"   # how long to tail before prompting cleanup
