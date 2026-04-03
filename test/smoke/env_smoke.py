@@ -1,14 +1,15 @@
 """
 C (env) — .env file loading and parsing test.
-Reads /app/.env (bind-mounted read-only from /volume1/docker/openalgo/env/.env),
-parses it, and logs the values of known non-secret keys.
+Reads the .env file (path from ENV_FILE env var, default /app/env_host/.env).
+The env directory is bind-mounted rather than the file directly — Synology
+AUFS cannot mount a single file unless it already exists in the image.
 Exits 0 on PASS, 1 on FAIL.
 """
 import os
 import sys
 import datetime
 
-ENV_FILE = "/app/.env"
+ENV_FILE = os.environ.get("ENV_FILE", "/app/env_host/.env")
 
 # Keys safe to print (no credentials or secrets)
 SAFE_KEYS = [
