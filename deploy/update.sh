@@ -51,6 +51,19 @@ echo ""
 cd "$REPO_DIR"
 
 # ----------------------------------------------------------------------------
+# 0. Preflight — .env must exist before we attempt a container start
+# ----------------------------------------------------------------------------
+ENV_FILE="/volume1/docker/openalgo/env/.env"
+if [ ! -f "$ENV_FILE" ] || [ ! -s "$ENV_FILE" ]; then
+    echo "ERROR: .env not found or empty at $ENV_FILE"
+    echo "  Copy the template and fill in your secrets:"
+    echo "    cp $REPO_DIR/env.nas.sample $ENV_FILE"
+    echo "    nano $ENV_FILE"
+    exit 1
+fi
+echo "  .env found: $ENV_FILE"
+
+# ----------------------------------------------------------------------------
 # 1. Fetch — always get latest tags and commits from origin
 # ----------------------------------------------------------------------------
 echo "[1/3] Fetching from GitHub..."
@@ -59,7 +72,7 @@ git fetch --tags origin
 if [ -n "$DEPLOY_TAG" ]; then
     # Verify the tag exists
     if ! git tag -l | grep -qx "$DEPLOY_TAG"; then
-        echo "ERROR: tag '$DEPLOY_TAG' not found on origin."
+        echo "ERROR: tag '$DEPLOY_TAG' not found (checked after fetch)."
         echo "  Available nas/ tags:"
         git tag -l 'nas/*' | sort -V | sed 's/^/    /'
         exit 1
