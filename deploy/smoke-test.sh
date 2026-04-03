@@ -30,6 +30,8 @@ set -euo pipefail
 
 NAS_HOST="nas"
 REPO_DIR="/volume1/docker/openalgo/repo"
+# Prepend to every NAS SSH command — Synology non-interactive shells lack /usr/local/bin
+NAS_ENV='export PATH=/usr/local/bin:/usr/local/sbin:$PATH'
 VARIANT="${1:-hello}"
 LOG_TAIL_SECS="${LOG_TAIL_SECS:-60}"   # how long to tail before prompting cleanup
 
@@ -55,7 +57,7 @@ cleanup() {
     section "Cleanup"
     read -rp "Stop and remove smoke containers on NAS? [y/N] " yn
     if [[ "${yn,,}" =~ ^y ]]; then
-        ssh "${NAS_HOST}" "${COMPOSE_CMD} down" && echo "  Containers removed."
+        ssh "${NAS_HOST}" "${NAS_ENV} && ${COMPOSE_CMD} down" && echo "  Containers removed."
     else
         echo "  Containers left running. To remove:"
         echo "    ssh ${NAS_HOST} '${COMPOSE_CMD} down'"
@@ -70,7 +72,7 @@ echo "  Compose: ${COMPOSE_FILE}"
 
 # 1. Start containers on NAS
 section "1/4  Starting containers on NAS"
-ssh "${NAS_HOST}" "cd ${REPO_DIR} && ${COMPOSE_CMD} up -d"
+ssh "${NAS_HOST}" "${NAS_ENV} && cd ${REPO_DIR} && ${COMPOSE_CMD} up -d"
 echo "  Containers started."
 
 # 2. WSL-side port check (B) — give server 3s to bind
@@ -139,7 +141,7 @@ echo ""
 
 trap cleanup EXIT
 
-ssh "${NAS_HOST}" "${COMPOSE_CMD} logs -f" &
+ssh "${NAS_HOST}" "${NAS_ENV} && ${COMPOSE_CMD} logs -f" &
 SSH_PID=$!
 sleep "${LOG_TAIL_SECS}" && kill "${SSH_PID}" 2>/dev/null || true
 wait "${SSH_PID}" 2>/dev/null || true
