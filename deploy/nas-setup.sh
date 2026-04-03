@@ -20,6 +20,9 @@
 
 set -e
 
+# Synology non-interactive SSH sessions omit /usr/local/bin (where git/docker live)
+export PATH="/usr/local/bin:/usr/local/sbin:${PATH}"
+
 NAS_ROOT="/volume1/docker/openalgo"
 REPO_DIR="$NAS_ROOT/repo"
 REPO_URL="${REPO_URL:-https://github.com/UltraGit/openalgo.git}"

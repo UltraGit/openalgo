@@ -31,6 +31,9 @@
 
 set -euo pipefail
 
+# Synology non-interactive SSH sessions omit /usr/local/bin (where docker lives)
+export PATH="/usr/local/bin:/usr/local/sbin:${PATH}"
+
 REPO_DIR="/volume1/docker/openalgo/repo"
 COMPOSE_FILE="$REPO_DIR/docker-compose.nas.yml"
 
