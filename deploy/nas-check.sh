@@ -110,6 +110,9 @@ section "NAS checks (via SSH)"
 NAS_OUTPUT=$(ssh -o ConnectTimeout=10 "$NAS_HOST" bash <<REMOTE
 set -uo pipefail
 
+# Synology non-interactive shells omit /usr/local/bin from PATH
+export PATH="/usr/local/bin:/usr/local/sbin:${PATH}"
+
 NAS_ROOT="${NAS_ROOT}"
 REPO_DIR="${REPO_DIR}"
 ENV_FILE="${ENV_FILE}"
