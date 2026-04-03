@@ -88,7 +88,7 @@ services:
     ports:
       - "8765:8765"
     command: >
-      sh -c "pip install --quiet --no-cache-dir websockets
+      sh -c "pip install --quiet --no-cache-dir --root-user-action=ignore websockets
              && python ws_server_smoke.py"
     restart: "no"
 
@@ -99,7 +99,7 @@ services:
       - /volume1/docker/openalgo/repo/test/smoke:/app:ro
     working_dir: /app
     command: >
-      sh -c "pip install --quiet --no-cache-dir websockets
+      sh -c "pip install --quiet --no-cache-dir --root-user-action=ignore websockets
              && sleep 8
              && python ws_client_smoke.py"
     depends_on:
