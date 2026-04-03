@@ -5,7 +5,7 @@ description: Deploy latest code to NAS OpenAlgo container
 ## Quick deploy (develop branch → NAS)
 
 ```bash
-ssh thorn@192.168.1.72 '/volume1/docker/openalgo/repo/deploy/update.sh'
+ssh nas '/volume1/docker/openalgo/repo/deploy/update.sh'
 ```
 
 ## Deploy a specific release tag
@@ -31,15 +31,24 @@ git tag -l 'nas/*' | sort -V
 ## Check what the NAS is currently running
 
 ```bash
-ssh thorn@192.168.1.72 'cd /volume1/docker/openalgo/repo && git describe --tags'
+ssh nas 'cd /volume1/docker/openalgo/repo && git describe --tags'
 ```
 
 ---
 
-If SSH key auth isn't set up yet, run from WSL first:
+If SSH key auth isn't set up yet, see the manual key setup steps:
 
 ```bash
-ssh-copy-id thorn@192.168.1.72
+# Generate a dedicated NAS key (no passphrase)
+ssh-keygen -t ed25519 -f ~/.ssh/nas_key -N "" -C "openalgo-nas"
+
+# Push the public key to the NAS (password prompt — last time)
+cat ~/.ssh/nas_key.pub | ssh thorn@192.168.1.72 \
+  'mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys'
+
+# Add to ~/.ssh/config
+echo -e "\nHost nas\n  HostName 192.168.1.72\n  User thorn\n  IdentityFile ~/.ssh/nas_key\n  IdentitiesOnly yes" >> ~/.ssh/config
+chmod 600 ~/.ssh/config
 ```
 
 See `deploy/RELEASE.md` for the full branch and release strategy.

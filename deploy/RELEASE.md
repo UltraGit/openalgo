@@ -58,7 +58,7 @@ git push origin develop
 
 ```bash
 # From WSL — NAS pulls latest develop
-ssh thorn@192.168.1.72 '/volume1/docker/openalgo/repo/deploy/update.sh'
+ssh nas '/volume1/docker/openalgo/repo/deploy/update.sh'
 # (DEPLOY_BRANCH defaults to 'develop' in update.sh)
 ```
 
@@ -66,7 +66,7 @@ Or with the smoke test first:
 
 ```bash
 ./deploy/smoke-test.sh abce     # pre-flight: vol, port, env, websocket
-ssh thorn@192.168.1.72 '/volume1/docker/openalgo/repo/deploy/update.sh'
+ssh nas '/volume1/docker/openalgo/repo/deploy/update.sh'
 ```
 
 ---
@@ -118,13 +118,13 @@ This SSHs to the NAS and runs `update.sh` with `DEPLOY_TAG=nas/v0.1`. The NAS wi
 
 ```bash
 # Tail logs directly
-ssh thorn@192.168.1.72 'docker compose -f /volume1/docker/openalgo/repo/docker-compose.nas.yml logs -f openalgo'
+ssh nas 'docker compose -f /volume1/docker/openalgo/repo/docker-compose.nas.yml logs -f openalgo'
 
 # Check status
-ssh thorn@192.168.1.72 'docker compose -f /volume1/docker/openalgo/repo/docker-compose.nas.yml ps'
+ssh nas 'docker compose -f /volume1/docker/openalgo/repo/docker-compose.nas.yml ps'
 
 # Confirm the tag the NAS is running
-ssh thorn@192.168.1.72 'cd /volume1/docker/openalgo/repo && git describe --tags'
+ssh nas 'cd /volume1/docker/openalgo/repo && git describe --tags'
 ```
 
 ---
@@ -177,14 +177,14 @@ Examples:
 
 ```bash
 # Deploy latest develop (default)
-ssh thorn@192.168.1.72 '/volume1/docker/openalgo/repo/deploy/update.sh'
+ssh nas '/volume1/docker/openalgo/repo/deploy/update.sh'
 
 # Deploy a specific release tag
-ssh thorn@192.168.1.72 \
+ssh nas \
   'DEPLOY_TAG=nas/v0.2 /volume1/docker/openalgo/repo/deploy/update.sh'
 
 # Deploy a feature branch for one-off testing (not recommended for production)
-ssh thorn@192.168.1.72 \
+ssh nas \
   'DEPLOY_BRANCH=feature/kraken-broker /volume1/docker/openalgo/repo/deploy/update.sh'
 ```
 

@@ -13,7 +13,8 @@
 #   abce   — HELLO + A/vol + B/port + C/env + E/ws  (as above + WebSocket probe)
 #
 # Prerequisites:
-#   - SSH key auth to NAS:  ssh-copy-id admin@192.168.1.72
+#   - SSH config alias 'nas' configured in ~/.ssh/config
+#   - Key auth working: ssh -o BatchMode=yes nas true
 #   - For abc/abce: NAS setup complete (deploy/nas-setup.sh has been run)
 #   - For abc/abce: /volume1/docker/openalgo/env/.env populated
 #
@@ -27,7 +28,7 @@
 
 set -euo pipefail
 
-NAS_HOST="thorn@192.168.1.72"
+NAS_HOST="nas"
 REPO_DIR="/volume1/docker/openalgo/repo"
 VARIANT="${1:-hello}"
 LOG_TAIL_SECS="${LOG_TAIL_SECS:-60}"   # how long to tail before prompting cleanup
