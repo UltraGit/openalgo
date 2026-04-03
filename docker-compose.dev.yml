@@ -1,0 +1,40 @@
+# Local WSL dev only — do not deploy to NAS directly
+# ============================================================================
+# OpenAlgo — WSL2 Development Override
+# ============================================================================
+# Usage (from repo root in WSL):
+#   cp .sample.env .env          # then edit .env with your dev values
+#   docker compose -f docker-compose.nas.yml -f docker-compose.dev.yml up --build
+#
+# This file OVERRIDES docker-compose.nas.yml for local development:
+#   - Mounts the repo source for live editing
+#   - Enables Flask debug mode
+#   - Uses local ./db and ./log directories instead of NAS paths
+#   - Does NOT require /volume1/docker/openalgo/ to exist
+# ============================================================================
+
+services:
+  openalgo:
+    # Override NAS bind mounts with local paths
+    volumes:
+      - .:/app                   # Live source code (edit without rebuilding)
+      - ./db:/app/db
+      - ./log:/app/log
+      - ./strategies:/app/strategies
+      - ./keys:/app/keys
+      - ./tmp:/app/tmp
+      - ./.env:/app/.env:ro
+
+    environment:
+      - PORT=8080
+      - FLASK_PORT=8080
+      - FLASK_DEBUG=True
+      - FLASK_ENV=development
+      - TRADING_MODE=paper
+      - WEBSOCKET_HOST=0.0.0.0
+      - ZMQ_HOST=0.0.0.0
+
+    ports:
+      - "8080:8080"
+      - "8765:8765"
+      - "5555:5555"

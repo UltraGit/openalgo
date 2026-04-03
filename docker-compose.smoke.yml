@@ -1,0 +1,26 @@
+# ============================================================================
+# OpenAlgo Smoke Test — HELLO
+# ============================================================================
+# Variant: hello (base)
+# Tests:   Container starts, stdout logging works
+#
+# Usage (on NAS via SSH, or via deploy/smoke-test.sh hello):
+#   cd /volume1/docker/openalgo/repo
+#   docker compose -f docker-compose.smoke.yml up -d
+#   docker compose -f docker-compose.smoke.yml logs -f
+#   docker compose -f docker-compose.smoke.yml down
+#
+# No ports exposed. No volumes. No credentials needed.
+# Safe to run at any time.
+# ============================================================================
+
+services:
+
+  smoke-hello:                          # HELLO: heartbeat logger
+    image: python:3.12-slim
+    container_name: openalgo-smoke-hello
+    volumes:
+      - /volume1/docker/openalgo/repo/test/smoke:/app:ro
+    working_dir: /app
+    command: python hello_smoke.py
+    restart: "no"

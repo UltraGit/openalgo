@@ -1,0 +1,12 @@
+{
+    "name": "Kraken",
+    "broker_id": "kraken",
+    "description": "Kraken cryptocurrency exchange (work in progress)",
+    "status": "stub",
+    "auth_type": "apikey",
+    "exchange": ["KRAKEN"],
+    "asset_classes": ["crypto"],
+    "docs_url": "https://docs.kraken.com/rest/",
+    "sdk_url": "https://github.com/btschwertfeger/python-kraken-sdk",
+    "enabled": false
+}

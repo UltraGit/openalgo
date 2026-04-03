@@ -8,7 +8,9 @@ openalgo.db
 .env
 .flaskenv
 *.pyc
+*.pyo
 __pycache__/
+logs/
 instance/
 .DS_Store
 Thumbs.db
