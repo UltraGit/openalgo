@@ -70,7 +70,7 @@ echo "  .env found: $ENV_FILE"
 # 1. Fetch — always get latest tags and commits from origin
 # ----------------------------------------------------------------------------
 echo "[1/3] Fetching from GitHub..."
-git fetch --tags origin
+git fetch --tags --force origin
 
 if [ -n "$DEPLOY_TAG" ]; then
     # Verify the tag exists
